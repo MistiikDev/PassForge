@@ -1,0 +1,21 @@
+{
+    "types": {
+        "algorithm": {
+            "1": {
+                "name": "Ceasar",
+                "description": "Uses the key (integer) to shift the original message.",
+                "code": 1
+            },
+            "2": {
+                "name": "RSA",
+                "description": "Transforms the original message based on a private and public key.",
+                "code": 2
+            },
+            "3": {
+                "name": "PM Encryptor",
+                "description": "Uses the key (integer) to process changes on the original message based on various techniques",
+                "code": 3
+            }
+        }
+    }
+}

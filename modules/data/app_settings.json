@@ -1,0 +1,6 @@
+{
+    "command_prefix": "",
+    "cmd_prefix": "<< PassManager >>",
+    "version": 2.1,
+    "quit": "-quit"
+}

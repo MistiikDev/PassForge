@@ -1,0 +1,430 @@
+import time
+from os import system, name
+import os
+import sys
+
+from modules.services.dataservice import DatastoreService
+from modules.services.uiservice import UiService
+from modules.services.cypherservice import CypherService, ui_util
+from modules.services.interactionservice import InteractionService, QuitRequested, Abort
+from modules.services.securityservice import SecurityService
+
+# Constants for file paths and environment variable
+PW_FILE = "pw.dat"  # File to store password data
+ENUMS_FILE = "enumerators.json"  # File for enumerators (e.g., algorithms)
+COMMANDS_FILE = "commands_list.json"  # File for command configurations
+
+DATA_FOLDER = "data"  # Folder where data files are located
+
+# Initialize services and utilities
+data_service = DatastoreService(DATA_FOLDER)
+security_service = SecurityService()
+ui_service = UiService()
+encryption_service = CypherService()
+interaction_service = InteractionService()
+
+def helper(parameters):
+    """
+    Display available commands to the user.
+    """
+    current_commands = data_service.read_data_as_json(COMMANDS_FILE)
+
+    if current_commands:
+        commands = current_commands['commands']
+        ui_service.display_helpers("Helpers", commands)
+
+    return
+
+
+## CREDENTIALS MANIPULATIONS
+
+def add_cred(parameters):
+    """
+    Add a new credential or update an existing one.
+    """
+    current_logins = data_service.read_data_as_json(PW_FILE)
+
+    tag = None
+    if parameters and parameters[0]:
+        tag = parameters[0]
+    else:
+        tag = interaction_service.get_input_from_user(
+            'Enter an ID for you to recognize the credentials: ', str
+        )
+
+    cred_id = tag
+    already_exists = cred_id in current_logins
+    is_active = True
+
+    # If credential already exists, handle updates
+    if already_exists:
+        existing_entry = current_logins[cred_id]
+        login = existing_entry.get('login', '')
+        pws = existing_entry.get('pws', [])
+        labels = existing_entry.get('labels', [])
+
+        confirmation = interaction_service.get_approval_user(
+            f"Entry for '{cred_id}' already exists. Do you want to modify it? (y/n): ", str, True
+        )
+
+        if not confirmation:
+            raise Abort("Authentication")
+
+        # Disable the current active password, if any
+        for password in pws:
+            if password.get("active", False):
+                password["active"] = False
+                is_active = True
+
+                ui_service.display(
+                    'If set, current password will be moved to history and replaced by the new entry. '
+                    'You can still check history by entering {ls_pws}',
+                    "Warning"
+                )
+                break
+    else:
+        # Initialize a new credential entry
+        current_logins[cred_id] = {
+            'login': "",
+            'pws': [],
+            'labels': []
+        }
+        login = ""
+        pws = []
+        labels = []
+
+    # Prompt for login and password
+    login = interaction_service.get_input_from_user('Enter your login: ', str, already_exists) or login
+    feedback, password_secure = "", False
+    pw = None
+
+    while not password_secure:
+        pw = interaction_service.get_input_from_user('Enter your password: ', str, already_exists)
+        feedback, password_secure = security_service.password_strength(pw)
+
+        ui_service.display(f"Password Strength is {feedback} {not password_secure and 'Retry.' or ''}", "Info")
+
+    if pw:
+        # Display available encryption methods
+        modules.execute([])
+
+        encryption_method = interaction_service.get_input_from_user(
+            'Please enter the encryption type: ', int, False
+        )
+
+        if not encryption_service.is_cypher_valid(encryption_method):
+            return ui_service.display(f"Error while getting encryption method. Could not find ID: {encryption_method}",
+                                   "Error")
+
+        key = encryption_service.get_encryption_keys(encryption_method)
+
+        if not key:
+            return ui_service.display("Error while getting encryption key.", "Error")
+
+        encrypted_pw = encryption_service.encrypt_master(encryption_method, pw, key)
+
+        # Append the new password entry
+        pws.append({
+            'id': len(pws) + 1,
+            'key': key,
+            'value': encrypted_pw,
+            'crypto': encryption_method,
+            'active': is_active
+        })
+
+    # Prompt for a label to tag the credentials
+    label = interaction_service.get_input_from_user('Enter a label to register the auth: ', str, True)
+    if label:
+        labels.append(label)
+
+    # Save updated credentials
+    current_logins[cred_id] = {
+        'login': login,
+        'pws': pws,
+        'labels': labels
+    }
+
+    data_service.save_data(current_logins, PW_FILE)
+    ui_service.display(f"Data for '{cred_id}' successfully saved.", "Success")
+
+
+def rmv_cred(parameters):
+    """
+    Remove a credential by its ID.
+    """
+    current_logins = data_service.read_data_as_json(PW_FILE)
+    exists, cred_id = interaction_service.get_credentials(parameters, list_cred)
+
+    if exists:
+        confirmation = interaction_service.get_approval_user("[yellow]Warning[/yellow]: Deleting a credential is [red]PERMANENT[/red]. Are you sure you want to proceed? (y/n)", str,ask_one=False)
+
+        if confirmation:
+            del current_logins[cred_id]
+            data_service.save_data(current_logins, PW_FILE)
+
+            return ui_service.display('Credentials successfully deleted from database.', "Success")
+        else:
+            raise QuitRequested
+
+
+## PASSWORD MANIPULATIONS
+
+def recover_pw(parameters):
+    """
+    Recover a password by its ID and set it to active.
+    """
+    current_logins = data_service.read_data_as_json(PW_FILE)
+    exists, cred_id = interaction_service.get_credentials(parameters, ls_cred)
+
+    if not exists:
+        return ui_service.display('Credentials not found, please try again.')
+
+    passwords = current_logins[cred_id].get('pws', [])
+
+    if not passwords:
+        return ui_service.display('Could not retrieve passwords. Try again.', "LightError")
+
+    pw_id = interaction_service.get_input_from_user('Enter the password ID you wish to recover (ls_pws to check): ', str)
+
+    if not pw_id:
+        return ui_service.display('The password ID is not set properly, try again', "LightError")
+
+    active_pws = [pw for pw in passwords if pw['active']]
+
+
+    # Find and activate the specified password
+    for pw in passwords:
+        if str(pw['id']) == pw_id:
+            ## if the password is already active, no need to recover.
+            if pw in active_pws:
+                return ui_service.display('Selected password is already active.', "LightError")
+
+            ## If there are already active passwords, notify user.
+            if len(active_pws) > 0:
+                confirmation = interaction_service.get_approval_user("[yellow]Warning[/yellow]: There is already one active password. Proceeding will archive it. Are you sure you want to proceed? (y/n)",str, ask_one=False)
+                ## if we proceed, deactivate current password
+
+                if confirmation:
+                    for active_pw in active_pws:
+                        active_pw_id = str(active_pw['id'])
+
+                        ui_service.display(f'Password ID {active_pw_id} is now deactivated.', "LightError")
+                        active_pw['active'] = False
+                else:
+                    raise Abort("Recover")
+
+                pw['active'] = True
+                ui_service.display(f'Password ID {pw_id} is now active.', "Success")
+                break
+
+    else:
+        return ui_service.display('The password ID could not be found, try again.', "LightError")
+
+    current_logins[cred_id]['pws'] = passwords
+    data_service.save_data(current_logins, PW_FILE)
+
+
+def rmv_pw(parameters):
+    """
+    Remove a password by its ID.
+    """
+    current_logins = data_service.read_data_as_json(PW_FILE)
+    exists, cred_id = interaction_service.get_credentials(parameters, ls_cred)
+
+    if exists:
+        passwords = current_logins[cred_id]['pws']
+        pw_id = interaction_service.get_input_from_user('Enter the password ID you wish to delete (ls_pws to check): ',str)
+        active_pw = [pw for pw in passwords if pw['active']]
+
+        if pw_id:
+            for pw in passwords:
+                if str(pw['id']) == pw_id:
+                    if pw in active_pw:
+                        confirmation = interaction_service.get_approval_user("[yellow]Warning[/yellow]: The selected password is already active. Removing it will archive it. Are you sure you want to proceed? (y/n)", str, ask_one=False)
+
+                        if confirmation:
+                            pw['active'] = False
+                        else:
+                            raise Abort("Erasure")
+                    else:
+                        confirmation = interaction_service.get_approval_user("[yellow]Warning[/yellow]: The selected password is archived. Removing it will [red]DELETE IT PERMANENTLY[/red]. Are you sure you want to proceed? (y/n)", str, ask_one=False)
+
+                        if confirmation:
+                            passwords.remove(pw)
+                        else:
+                            raise Abort("Erasure")
+                    break
+            else:
+                return ui_service.display('Password ID not found.', "LightError")
+
+            current_logins[cred_id]['pws'] = passwords
+            data_service.save_data(current_logins, PW_FILE)
+
+            ui_service.display(f"Password ID {pw_id} successfully removed.", "Success")
+
+
+## LISTING TO USER
+
+def ls_cred(parameters):
+    """
+    List all registered credentials.
+    """
+    current_logins = data_service.read_data_as_json(PW_FILE)
+    ui_service.display("Registered Credentials:", "Title")
+    ui_service.display(str(list(current_logins.keys())))
+
+
+def ls_pws(parameters):
+    """
+    List all passwords for a specific credential.
+    """
+    current_logins = data_service.read_data_as_json(PW_FILE)
+    exists, cred_id = interaction_service.get_credentials(parameters, ls_cred)
+
+    if exists:
+        data = current_logins[cred_id]
+
+        login = data['login']
+
+        active_pws = [pw for pw in data['pws'] if pw.get('active', False)]
+        inactive_pws = [pw for pw in data['pws'] if not pw.get('active', False)]
+
+        ui_service.display(f"[bright_yellow]   ==> Login: {login}[/bright_yellow]\n")
+
+        ui_service.display_passwords("Active Passwords", active_pws, encryption_service)
+        ui_service.display_passwords("Passwords History", inactive_pws, encryption_service)
+
+        labels = [label for label in data['labels']]
+        entries = len(labels)
+        if entries > 0:
+            ui_service.display(f"[bright_yellow]   ==> Labels: {str(entries)}[/bright_yellow]")
+
+            for label in labels:
+                ui_service.display(f'[italic]     -> ID: [bright_green]{label}[/bright_green][/italic]')
+
+
+def ls_crypto(parameters):
+    """
+    List available cryptographic methods.
+    """
+    enums = data_service.read_data_as_json(ENUMS_FILE)
+    algorithms = enums["types"]["algorithm"]
+    ui_service.display_crypto("[CRYPTOGRAPHIC SOLUTIONS]\n", algorithms)
+
+
+## PASSWORD METHODS
+
+def get_pw(parameters):
+    """
+    Generate a strong password of desired length.
+    """
+    length = None
+
+    if parameters and len(parameters) > 0:
+        length = parameters[0]
+
+    if not length:
+        length = interaction_service.get_input_from_user("Enter the desired password length: ", int, True) or 12
+
+    pw = security_service.generate_strong_password(desired_length=length)
+    ui_service.display("Generated password:", "Info")
+    ui_service.display(str(pw))
+
+
+def get_strength(parameters):
+    """
+    Calculate the strength of a given password.
+    """
+    pw = None
+
+    if parameters and len(parameters) > 0:
+        pw = parameters[0]
+
+    if not pw:
+        pw = interaction_service.get_input_from_user("Enter the password to calculate its strength: ", str, False)
+
+    strength, can_be_used = security_service.password_strength(pw)
+    ui_service.display(f"Result: {strength}", "Info")
+    ui_service.display(f"==> Password is {can_be_used and 'usable' or 'unusable'}", (can_be_used and 'Success' or 'Warning'))
+
+def search_by_field(parameters):
+    search_tile = None
+    if parameters and len(parameters) > 0:
+        search_tile = parameters[0]
+
+    if not search_tile:
+        search_tile = interaction_service.get_input_from_user('Enter the desired tile to search for: ', str, False)
+
+    ## Search through logins, then passwords, then labels, in any case, return the entire data sorted.
+    current_logins = data_service.read_data_as_json(PW_FILE)
+    search_data = []
+
+    for cred_id in current_logins:
+        current_data = current_logins[cred_id]
+
+        login = current_data['login']
+        pws = current_data['pws']
+        labels = current_data['labels']
+
+        if search_tile == login:
+            search_data.append({'ID': cred_id})
+
+            ui_service.display(f"[italic]Found Login [cyan]'{login}'[/cyan] for credentials [bright_red]'{cred_id}'[/bright_red][/italic]\n")
+
+        for pw_data in pws:
+            pw_key = pw_data['key']
+            pw_value = pw_data['value']
+            pw_crypto = pw_data['crypto']
+
+            search_pw = encryption_service.decrypt_master(pw_crypto, pw_value, pw_key)
+
+            if search_pw and search_pw == search_tile:
+                search_data.append({'ID': cred_id,})
+
+                ui_service.display(f"[italic]Found Password [cyan]'{search_tile}'[/cyan] for credentials [bright_red]'{cred_id}'[/bright_red][/italic]\n")
+
+        for label in labels:
+            if label == search_tile:
+                search_data.append({'ID': cred_id})
+
+                ui_service.display(f"[italic]Found Label [cyan]'{label}'[/cyan] for credentials [bright_red]'{cred_id}'[/bright_red][/italic]\n")
+
+                break
+
+    for data in search_data:
+        _id = data['ID']
+
+        ui_service.display_header(f"Associated Credential: {_id}")
+        ls_pws([_id])
+
+        print('\n')
+
+## UTILITIES METHODS
+
+def clear(parameters):
+    """
+    Clear the terminal screen.
+    """
+    if name == 'nt':
+        system('cls')
+    else:
+        system('clear')
+
+def restart_shell(parameters):
+    """Restart the Python shell."""
+    ui_util.display("Restarting the Python shell (please wait)...", "Error")
+    time.sleep(1)
+
+    python = sys.executable
+    os.execv(python, [python] + sys.argv)
+
+def hello_world(parameters):
+    n1 = parameters[0]
+    n2 = 10
+
+    if len(parameters) > 1:
+        n2 = parameters[1]
+
+    ui_util.display(f"Hello World : {n1}, {n2}", "Enums")
+
+

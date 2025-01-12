@@ -1,0 +1,116 @@
+{
+    "commands": {
+        "clear": {
+            "name": "Clear",
+            "description": "Clears the output",
+            "parameters": "",
+            "help": "Enter [red]clear[/red] to clear the output from previous commands and messages if they start taking too much space or memory.",
+            "synonyms": "'cls', 'c', 'empty'",
+            "kwargs": ""
+        },
+        "helper": {
+            "name": "Help",
+            "description": "Provides information about available commands and their usage.",
+            "parameters": "'command_name?'",
+            "help": "Use [red]help[/red] to get information on all commands or provide a command name to get detailed usage instructions.",
+            "synonyms": "'assist', 'info', 'help', 'h'",
+            "kwargs": ""
+        },
+        "add_cred": {
+            "name": "Add Credentials",
+            "description": "Register login and password data to the database.",
+            "parameters": "credentials_id?",
+            "help": "Use [red]add_cred[/red] to add a new login and password combination to the database.",
+            "synonyms": "'add_login', 'create_cred', 'add_credentials'",
+            "kwargs": ""
+        },
+        "rmv_cred": {
+            "name": "Remove Credentials",
+            "description": "Remove credentials from the database.",
+            "parameters": "credentials_id?",
+            "help": "Use [red]rmv_cred[/red] to remove a specific set of login credentials from the database.",
+            "synonyms": "'rmv_cred', 'remove_cred', 'delete_cred'",
+            "kwargs": ""
+        },
+        "recover_pw": {
+            "name": "Recover Password",
+            "description": "Recovers a specific password from the database.",
+            "parameters": "credentials_id?",
+            "help": "Use [red]recover_pw[/red] to recover a specific password from the database by providing the necessary parameters.",
+            "synonyms": "'recover_password', 'save_pw, 'save_password'",
+            "kwargs": "'force'"
+        },
+        "rmv_pw": {
+            "name": "Remove Password",
+            "description": "Delete a specific password from the database.",
+            "parameters": "credentials_id?",
+            "help": "Use [red]rmv_pw[/red] to remove a specific password from the database by providing the necessary parameters.",
+            "synonyms": "'remove_password', 'delete_pw', 'remove_pw'",
+            "kwargs": "'force'"
+        },
+        "ls_cred": {
+            "name": "List Credentials",
+            "description": "Displays all existing credential groups in the database.",
+            "parameters": "",
+            "help": "Use [red]ls_cred[/red] to return the list of credential groups (keys) stored in the database.",
+            "synonyms": "'cred', 'list_groups'",
+            "kwargs": ""
+        },
+        "ls_pws": {
+            "name": "List Passwords",
+            "description": "Displays all passwords stored under a specific group.",
+            "parameters": "credentials_id?",
+            "help": "Use [red]ls_pws[/red] to list all passwords stored under a specified group. Provide the group name as a parameter.",
+            "synonyms": "'show_passwords', 'list_pw'",
+            "kwargs": ""
+        },
+        "ls_crypto": {
+            "name": "List Cryptographic Methods",
+            "description": "Displays all cryptographic methods available and their associated IDs.",
+            "parameters": "",
+            "help": "Use [red]ls_crypto[/red] to list all encryption methods and their IDs for usage.",
+            "synonyms": "'crypto', 'ls_encryption'",
+            "kwargs": ""
+        },
+        "get_strength": {
+            "name": "Get Password Strength",
+            "description": "Given a password, returns its calculated strength based off of industry standards criterias.",
+            "parameters": "password?",
+            "help": "Use [red]get_strength[/red] to calculate the strength of given password",
+            "synonyms": "'pw_strength', 'pw_score', 'get_score'",
+            "kwargs": ""
+        },
+        "get_pw": {
+            "name": "Generate Password",
+            "description": "Given a certain length, returns a secure password",
+            "parameters": "desired_length?",
+            "help": "Use [red]get_strength[/red] to generate a secured password",
+            "synonyms": "'generate_pw', 'create_pw', 'secure_pw'",
+            "kwargs": "'lowercase', 'uppercase', 'no_digits', 'no_special'"
+        },
+        "search_by_field": {
+            "name": "Search By Field",
+            "description": "Given a certain data, returns the entire data tile associated, either from login, password or label.",
+            "parameters": "field?",
+            "help": "Use [red]search_by_field[/red] to return the entire data tile from either a login, password or label",
+            "synonyms": "'search', 'create_pw', 'secure_pw'",
+            "kwargs": ""
+        },
+        "restart_shell": {
+            "name": "Restart Program",
+            "description": "Restarts the current python CMD shell",
+            "parameters": "",
+            "help": "Use [red]restart_shell[/red] to restart the entire program. More useful for developers. Useful when having to make quick changes and apply them without manually restarting the program.",
+            "synonyms": "'restart'",
+            "kwargs": "'fast'"
+        },
+        "hello_world": {
+            "name": "Hello World",
+            "description": "Displays hello world with 2 numbers on the screen!",
+            "parameters": "n1, n2?",
+            "help": "Debugging function",
+            "synonyms": "'hello', 'world'",
+            "kwargs": "'random'"
+        }
+    }
+}

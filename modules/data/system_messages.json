@@ -1,0 +1,29 @@
+{
+    "header": "[underline]  >> {0} <<  [/underline]\n",
+    "enter_label": "Enter {0} ({1}): ",
+
+    "entry_exists_warning": "Entry for {0} already exists. Do you want to modify it? (y/n): ",
+    "pw_replace_warning": "[bold bright_red]If set, current {0} will be junked into history and be replaced by the new entry. You can still check hitsory by entering {1}[/bold bright_red]",
+    "overwrite_warning": "[italic red]WARNING {0} '{1}' is set to [bold green]{2}[/boldgreen]. Do you want to still remove it? (y/n): [/italic red]",
+    "deletion_warning": "[italic red]WARNING {0} '{1}' is set to [bold green]{2}[/bold green].  Do you want to still remove it? (y/n): [/italic red]",
+    "permanent_deletion_warning": "[italic red]WARNING {0} '{1}' is set to [bold green]{2}[/bold green]. Removing it will be permanent. Do you want to still remove it? (y/n): [/italic red]",
+    
+    "auth_aborted": "[italic red]Authentication aborted.[/italic red]",
+    "process_aborted": "[bold red]Process aborted.",
+
+    "missing_element": "[bright_red]Data {0} do not exist in database[/bright_red]",
+    "retrieve_error": "[bright red]Could not retrieve {0}. Try again[/bright red]",
+    "typo_error": "[bright red]{0} is not set proprely, try again[/bright red]",
+    "overwrite_error": "[bright red]{0}: {1} is already set to active. If you wish to replace it, remove it and retry again.[/bright red]",
+
+    "cypher_missing_error": "[bold red]Error while getting encryption method. Could not find ID: {0}[/bold red]",
+    "key_generate_error": "[bold red]Error while retrieving encryption keys. Could not save credentials: {0}[/bold red]",
+    "encryption_error": "[bold red]Error while encrypting: {0}[/bold red]",
+    "decryption_error": "[bold red]Error while decrypting: {0}[/bold red]",
+
+    "data_saving_error": "[bold red]Could not save file, error : {0}[/bold red]",
+    "data_reading_error": "[bright red]Error while reading data for {0}, {1}[/bright red]",
+
+    "data_found": "[bright_blue]Found {0}: {1}. Proceeding[/bright_blue]",
+    "data_operation_successful": "[bold italic green]{0} successfully {1}.[/bold italic green]"
+}
